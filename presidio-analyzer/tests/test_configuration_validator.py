@@ -1,8 +1,14 @@
 """Tests for the Pydantic-based validation system using existing adapted classes."""
 # ruff: noqa: D103,E501
 
+import inspect
+
 import pytest
-from presidio_analyzer.input_validation import ConfigurationValidator
+from presidio_analyzer.context_aware_enhancers import LemmaContextAwareEnhancer
+from presidio_analyzer.input_validation import (
+    ConfigurationValidator,
+    ContextAwareEnhancerConfig,
+)
 
 # ========== Language Code Validation Tests ==========
 
@@ -567,6 +573,27 @@ def test_when_context_aware_enhancer_fields_omitted_then_only_given_keys_returne
     assert validated == {"context_suffix_count": 5}
 
 
+def test_when_context_aware_enhancer_section_is_empty_then_defaults_returned():
+    validated = ConfigurationValidator.validate_context_aware_enhancer_configuration(
+        None
+    )
+    assert validated == {}
+
+
+def test_when_context_aware_enhancer_section_is_empty_then_analyzer_config_passes():
+    config = {"supported_languages": ["en"], "context_aware_enhancer": None}
+
+    validated = ConfigurationValidator.validate_analyzer_configuration(config)
+    assert validated == config
+
+
+def test_context_aware_enhancer_config_fields_match_enhancer_constructor():
+    constructor_params = set(
+        inspect.signature(LemmaContextAwareEnhancer.__init__).parameters
+    ) - {"self"}
+    assert set(ContextAwareEnhancerConfig.model_fields) == constructor_params
+
+
 def test_when_context_aware_enhancer_factor_is_int_then_accepted_as_float():
     validated = ConfigurationValidator.validate_context_aware_enhancer_configuration(
         {"context_similarity_factor": 1, "min_score_with_context_similarity": 0}
@@ -639,7 +666,7 @@ def test_when_context_aware_enhancer_section_is_invalid_then_raises_with_message
     ) in message
 
 
-@pytest.mark.parametrize("enhancer_config", [None, [], "context_suffix_count: 5"])
+@pytest.mark.parametrize("enhancer_config", [[], "context_suffix_count: 5"])
 def test_when_context_aware_enhancer_section_is_not_a_dict_then_raises(
     enhancer_config,
 ):

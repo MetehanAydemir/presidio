@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import ValidationError
 
@@ -111,13 +111,16 @@ class ConfigurationValidator:
 
     @staticmethod
     def validate_context_aware_enhancer_configuration(
-        config: Dict[str, Any],
+        config: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Validate the context-aware enhancer section of the analyzer configuration.
 
         :param config: Context-aware enhancer configuration to validate.
+        An empty section (None) is treated as {}, so all defaults are used.
         :return: The provided keys only, so omitted ones keep constructor defaults.
         """
+        if config is None:
+            return {}
         if not isinstance(config, dict):
             raise ValueError(
                 "context_aware_enhancer configuration must be a dictionary"

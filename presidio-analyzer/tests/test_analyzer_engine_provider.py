@@ -910,6 +910,27 @@ def test_when_context_aware_enhancer_section_absent_then_engine_uses_defaults(
     assert enhancer.context_matching_mode == "substring"
 
 
+def test_when_context_aware_enhancer_section_empty_then_engine_uses_defaults(
+    tmp_path,
+):
+    analyzer_yaml = _write_context_enhancer_analyzer_conf(tmp_path)
+    # A bare "context_aware_enhancer:" header parses as None
+    with open(analyzer_yaml, "a") as f:
+        f.write("context_aware_enhancer:\n")
+
+    provider = AnalyzerEngineProvider(analyzer_yaml)
+    assert provider.configuration["context_aware_enhancer"] is None
+    engine = provider.create_engine()
+
+    enhancer = engine.context_aware_enhancer
+    assert isinstance(enhancer, LemmaContextAwareEnhancer)
+    assert enhancer.context_similarity_factor == 0.35
+    assert enhancer.min_score_with_context_similarity == 0.4
+    assert enhancer.context_prefix_count == 5
+    assert enhancer.context_suffix_count == 0
+    assert enhancer.context_matching_mode == "substring"
+
+
 def test_when_context_suffix_count_configured_then_suffix_context_boosts_score(
     tmp_path,
 ):
